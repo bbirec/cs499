@@ -11,5 +11,5 @@
         port (Integer. (get (System/getenv) "PORT" "8081"))]
     
     (server/start port {:mode mode
-                        :ns 'oneroom})))
+                        :ns 'cs499})))
 

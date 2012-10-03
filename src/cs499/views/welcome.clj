@@ -16,7 +16,7 @@
    [:ul
     [:li "~ 2012. 9. 18 : 주제 정하기 위한 첫번째 미팅"]
     [:li "~ 2012. 9. 24 : R-tree, SSQ(Spatial Skyline Quries)에 대한 논문 읽어보기"]
-    [:li "~ 2012. 9. 4 : Threshold Algorithm, Group Nearest Neighbor Queries 에 대한 논문 Reading, Proposal 작성 준비"]]
+    [:li "~ 2012. 10. 4 : Threshold Algorithm, Group Nearest Neighbor Queries 에 대한 논문 Reading, Proposal 작성 준비"]]
    
    [:h2 "References"]
    [:ul

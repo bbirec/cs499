@@ -1,13 +1,4 @@
 # cs499
 
-A Clojure library designed to ... well, that part is up to you.
+Senior project(CS499) Web Site.
 
-## Usage
-
-FIXME
-
-## License
-
-Copyright © 2012 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.

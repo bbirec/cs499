@@ -2,22 +2,16 @@
   (:use [factql.core])
   (:require [clojure.math.numeric-tower :as math])
   (:require [factual.api :as fact])
-  (:require [monger.core :as mg])
   (:require [monger.collection :as mc]))
 
 
 
 (def auth-key (get (System/getenv) "FACTUAL_KEY" ""))
 (def auth-secret (get (System/getenv) "FACTUAL_SECRET" ""))
-(def mongo-uri (get (System/getenv) "CS499_MONGO_URI" ""))
+
 
 (fact/factual! auth-key auth-secret)
 
-(defn connect []
-  (let [uri (get (System/getenv)
-                   "MONGOLAB_URI" mongo-uri)]
-      (prn "Connecting to hosted db")
-      (mg/connect-via-uri! uri)))
 
 
 (defn get-restaurants []

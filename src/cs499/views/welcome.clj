@@ -51,5 +51,7 @@
    [:div
     [:ul
      [:li (link "CSED499 Class Homepage" "http://www.postech.ac.kr/class/cs499/2012fall/")]
-     [:li (link "This Web Site Source Code" "https://bitbucket.org/bbirec/cs499")]]]))
+     [:li (link "This Web Site Source Code" "https://bitbucket.org/bbirec/cs499")]]]
+   [:hr]
+   [:p "Hosted on Heroku. Written in Clojure."]))
 

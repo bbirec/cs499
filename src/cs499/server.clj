@@ -9,6 +9,9 @@
 (defn -main [& m]
   (let [mode (keyword (or (first m) :dev))
         port (Integer. (get (System/getenv) "PORT" "8081"))]
+    ;; Connect to mongo db
+    (cs499.factual/connect)
+    
     (server/start port {:mode mode
                         :ns 'cs499})))
 

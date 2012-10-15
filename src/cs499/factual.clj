@@ -102,3 +102,51 @@
 (def coll-fastfood "fastfood-coll")
 (def coll-movie "coll-movie")
 (def coll-department "coll-department")
+
+
+;; iNavi
+
+;; lib
+(def r-lib [346225 351200])
+(def g-lib [129.3254542350769 36.01289235186807])
+
+;; sub
+(def r-sub [152240 527873])
+(def g-sub [126.9008338451385 37.48509196114841])
+
+(defn conv-rx-to-geo [rx]
+  (let [s (/ (math/abs (- (first g-lib) (first g-sub)))
+             (math/abs (- (first r-lib) (first r-sub))))]
+    (* s rx)))
+
+(defn conv-ry-to-geo [ry]
+  )
+
+(defn static-map-url2 [lon lat zoom w h]
+  (str "http://maps.googleapis.com/maps/api/staticmap?zoom="
+       zoom
+       "&size="
+       w
+       "x"
+       h
+       "&maptype=roadmap&markers=color:red%7Ccolor:red%7C"
+       lon
+       ","
+       lat
+       "&sensor=false"))
+
+
+
+(defn static-map-url [rx ry zoom w h]
+  (str "http://maps.googleapis.com/maps/api/staticmap?zoom="
+       zoom
+       "&size="
+       w
+       "x"
+       h
+       "&maptype=roadmap&markers=color:red%7Ccolor:red%7C"
+       (conv-ry-to-geo ry)
+       ","
+       (conv-rx-to-geo rx)
+       "&sensor=false"))
+

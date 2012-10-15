@@ -81,6 +81,10 @@
 (defn min-index [coll]
   (first (apply min-key second (map-indexed vector coll))))
 
+(defn max-index [coll]
+  (first (apply max-key second (map-indexed vector coll))))
+
+
 (defn new-result-set
   "Return the new result set(size=k) with the new item."
   [s k results]
@@ -98,9 +102,9 @@
         idx (atom 0)]
     
     (while (and (or (empty? @result-set)
-                    true
-                    #_(some #(< @threshold %) (map first @result-set))
-                    #_(< @threshold (apply max (map first @result-set))))
+                    #_true
+                    #_(some #(<= @threshold %) (map first @result-set))
+                    (< @threshold (apply max (map first @result-set))))
                 (< @idx 100))
       (prn (str "Iteration : " @idx))
       
@@ -125,7 +129,11 @@
           (prn "Now result map has " (str (count @result-set)))
           
           ;; Set threshold
-          (let [t min-score #_(reduce + (map #(dist-pair %) next-pairs))]
+          (let [t (apply min (map #(dist-pair %) next-pairs))
+                #_(first (first @result-set))
+                #_min-score
+                #_(nth scores (max-index scores))
+                #_(reduce + (map #(dist-pair %) next-pairs))]
             (prn (str "T:" t))
             (reset! threshold t)))
         

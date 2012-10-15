@@ -71,36 +71,48 @@
 (defn min-index [coll]
   (first (apply min-key second (map-indexed vector coll))))
 
-
+(defn add-result-set
+  "Adding a new item in the result set(size=k)."
+  [s k item]
+  (apply sorted-set
+         (take k (apply sorted-set-by
+                        #(< (first %1) (first %2))
+                        (conj s item)))))
 
 (defn ggnnq
   "GGNNQ"
   [k points & query-sets]
   (let [nearest-pairs (map #(nearest-pair-sort points %) query-sets)
         threshold (atom 0)
-        best-dist (atom 99999)
+        result-set (atom #{})
         idx (atom 0)]
-    (while (and (< @threshold @best-dist)
+    
+    (while (and (or (empty? @result-set)
+                    (< @threshold (apply max (map first @result-set))))
                 (< @idx 100))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
-        ;; Set threshold
-
         ;; Scores
         (let [results (map #(calc-score %1 %2 query-sets)
-                          next-pairs
-                          (range))
+                           next-pairs
+                           (range))
               scores (map first results)
               min-score-idx (min-index scores)
               min-score (nth scores min-score-idx)
               min-score-pair (nth next-pairs min-score-idx)
-              ]
-          (prn (str (nth results min-score-idx)))
-          ;(prn "Found pair:" min-score-pair " score=" min-score)
-          )
+              cur-item (nth results min-score-idx)]
+          ;; Adding to the final set
+          (reset! result-set (add-result-set @result-set k cur-item))
+          (prn (str "New item:" cur-item)))
+
+        ;; Set threshold
+        (let [t (reduce + (map #(dist-pair %) next-pairs))]
+          (prn (str "T:" t))
+          (reset! threshold t))
         
         ;; Increment idx
-        (swap! idx inc)))))
+        (swap! idx inc)))
+    @result-set))
 
 
 ;; Brute force algorithm

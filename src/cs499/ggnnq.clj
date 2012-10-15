@@ -83,11 +83,11 @@
 
 (defn new-result-set
   "Return the new result set(size=k) with the new item."
-  [s k item]
+  [s k results]
   (apply sorted-set
          (take k (apply sorted-set-by
                         #(< (first %1) (first %2))
-                        (conj s item)))))
+                        (clojure.set/union s results)))))
 
 (defn ggnnq
   "GGNNQ"
@@ -98,9 +98,12 @@
         idx (atom 0)]
     
     (while (and (or (empty? @result-set)
-                    (< @threshold (apply min (map first @result-set))))
+                    true
+                    #_(some #(< @threshold %) (map first @result-set))
+                    #_(< @threshold (apply max (map first @result-set))))
                 (< @idx 100))
       (prn (str "Iteration : " @idx))
+      
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
         ;; Scores
         (let [results (map #(calc-score %1 %2 query-sets)
@@ -111,21 +114,20 @@
               min-score (nth scores min-score-idx)
               min-score-pair (nth next-pairs min-score-idx)
               cur-item (nth results min-score-idx)]
+
+          (prn "New results:" (pr-str results))
           
-          (prn (str "Founded item:" cur-item))              
           ;; Adding to the final set
-          (if-not (contains? @result-set cur-item)
-            (do
-
-              (reset! result-set (new-result-set @result-set k cur-item))
-              (prn (str "Now result set has " (count @result-set) " items.")))
-            (do
-              (prn "Duplicated item. Skip."))))
-
-        ;; Set threshold
-        (let [t (reduce + (map #(dist-pair %) next-pairs))]
-          (prn (str "T:" t))
-          (reset! threshold t))
+          (reset! result-set
+                  (new-result-set @result-set
+                                  k
+                                  (apply sorted-set results)))
+          (prn "Now result map has " (str (count @result-set)))
+          
+          ;; Set threshold
+          (let [t min-score #_(reduce + (map #(dist-pair %) next-pairs))]
+            (prn (str "T:" t))
+            (reset! threshold t)))
         
         ;; Increment idx
         (swap! idx inc)))

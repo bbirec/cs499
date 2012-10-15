@@ -56,23 +56,33 @@
   [idx coll]
   (keep-indexed #(if-not (= idx %1) %2) coll))
 
+(defn insert-item
+  "Insert an item into coll at idx"
+  [coll idx item]
+  (concat (take idx coll)
+          (list item)
+          (take-last (- (count coll) idx) coll)))
 
 (defn calc-score
-  "Calculating the score. The idx is the index of query set which has the pair."
+  "Calculating the score. The idx is the index of query set which has the q point."
   [pair idx query-sets]
   (let [p (first pair)
+        q (second pair)
         qs (keep-except idx query-sets)
         closest-pair (map #(vector p (nearest-point p %1)) qs)
-        closest-dist (map dist-pair closest-pair)]
+        closest-dist (map dist-pair closest-pair)
+        query-points (into [] (insert-item (map second closest-pair)
+                                   idx
+                                   q))]
     [(+ (dist-pair pair) (reduce + closest-dist))
-     pair
-     closest-pair]))
+     p
+     query-points]))
 
 (defn min-index [coll]
   (first (apply min-key second (map-indexed vector coll))))
 
-(defn add-result-set
-  "Adding a new item in the result set(size=k)."
+(defn new-result-set
+  "Return the new result set(size=k) with the new item."
   [s k item]
   (apply sorted-set
          (take k (apply sorted-set-by
@@ -88,9 +98,9 @@
         idx (atom 0)]
     
     (while (and (or (empty? @result-set)
-                    (< @threshold (apply max (map first @result-set))))
+                    (< @threshold (apply min (map first @result-set))))
                 (< @idx 100))
-      
+      (prn (str "Iteration : " @idx))
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
         ;; Scores
         (let [results (map #(calc-score %1 %2 query-sets)
@@ -101,9 +111,16 @@
               min-score (nth scores min-score-idx)
               min-score-pair (nth next-pairs min-score-idx)
               cur-item (nth results min-score-idx)]
+          
+          (prn (str "Founded item:" cur-item))              
           ;; Adding to the final set
-          (reset! result-set (add-result-set @result-set k cur-item))
-          (prn (str "New item:" cur-item)))
+          (if-not (contains? @result-set cur-item)
+            (do
+
+              (reset! result-set (new-result-set @result-set k cur-item))
+              (prn (str "Now result set has " (count @result-set) " items.")))
+            (do
+              (prn "Duplicated item. Skip."))))
 
         ;; Set threshold
         (let [t (reduce + (map #(dist-pair %) next-pairs))]
@@ -123,7 +140,8 @@
     (map (fn [points]
            (vector (reduce + (map #(dist-pair (vector p %))
                                   points))
-                   p points))
+                   p
+                   (into []  points)))
          q-points)))
 
 (defn brute-force-ggnnq

@@ -8,5 +8,6 @@
                  [noir "1.2.1"]
                  [factual/factual-clojure-driver "1.4.3"]
                  [factql "1.0.3"]
-                 [com.novemberain/monger "1.1.2"]]
+                 [com.novemberain/monger "1.1.2"]
+                 [org.clojure/math.combinatorics "0.0.3"]]
   :main cs499.server)

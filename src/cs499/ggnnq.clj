@@ -78,6 +78,41 @@
      p
      query-points]))
 
+
+(defn rac
+  ([nearest-pairs col row]
+     (nth (nth nearest-pairs col) row))
+  ([nearest-pairs col]
+     (nth nearest-pairs col)))
+
+(defn find-pairs
+  "Find all pairs starting from given p until it reaches to row. At least one, the closest pair, is returned."
+  [pairs row p]
+  (let [found (filter #(= (first %) p) (take (+ row 1) pairs))]
+    (if (empty? found)
+      (take 1 (filter #(= (first %) p) pairs))
+      found)))
+
+(defn make-result-form
+  [pair col & rest]
+  (let [p (first pair)
+        q (second pair)
+        qs (into [] (insert-item (map second rest) col q))
+        d (+ (dist-pair pair )
+             (reduce + (map dist-pair rest)))]
+    [d p qs]))
+
+(defn find-candidates
+  [nearest-pairs row col]
+  (let [pair (rac nearest-pairs col row)
+        p (first pair)
+        q (second pair)
+        remains (keep-except col nearest-pairs)
+        founds (map #(find-pairs % row p) remains)
+        possibles (apply comb/cartesian-product founds)]
+    (prn "Pair:" (pr-str pair) " Possibles:" (pr-str possibles))
+    (map #(apply make-result-form pair col %) possibles)))
+
 (defn min-index [coll]
   (first (apply min-key second (map-indexed vector coll))))
 
@@ -100,42 +135,37 @@
         threshold (atom 0)
         result-set (atom #{})
         idx (atom 0)]
-    
+    (prn "NNP" (pr-str nearest-pairs))
     (while (and (or (empty? @result-set)
-                    true
+                    (< (count @result-set) k)
+                    #_true
                     #_(some #(<= @threshold %) (map first @result-set))
-                    #_(< @threshold (apply max (map first @result-set))))
-                (< @idx 100))
+                    (and
+                     (= (count @result-set) k)
+                     (< @threshold (apply max (map first @result-set)))))
+                (< @idx (count (first nearest-pairs))))
       (prn (str "Iteration : " @idx))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
 
-        (prn "Current pairs:" (pr-str next-pairs))
+        #_(prn "Current pairs:" (pr-str next-pairs))
         
         ;; Scores
-        (let [results (map #(calc-score %1 %2 query-sets)
-                           next-pairs
-                           (range))
-              scores (map first results)
-              min-score-idx (min-index scores)
-              min-score (nth scores min-score-idx)
-              min-score-pair (nth next-pairs min-score-idx)
-              cur-item (nth results min-score-idx)]
+        (let [candidates (apply concat
+                                (map #(find-candidates nearest-pairs @idx %)
+                                     (range (count query-sets))))]
 
-          (prn "New results:" (pr-str results))
+          (prn "New results:" (pr-str candidates))
           
           ;; Adding to the final set
           (reset! result-set
                   (new-result-set @result-set
                                   k
-                                  (apply sorted-set results)))
+                                  (apply sorted-set candidates)))
           (prn "Now result map has " (str (count @result-set)))
           
           ;; Set threshold
-          (let [t (apply min (map #(dist-pair %) next-pairs))
-                #_(first (first @result-set))
-                #_min-score
-                #_(nth scores (max-index scores))
+          (let [t (apply min (map first candidates))
                 #_(reduce + (map #(dist-pair %) next-pairs))]
             (prn (str "T:" t))
             (reset! threshold t)))
@@ -143,6 +173,9 @@
         ;; Increment idx
         (swap! idx inc)))
     @result-set))
+
+
+
 
 
 ;; Brute force algorithm
@@ -162,4 +195,27 @@
   (let [results (apply concat
                         (map #(apply brute-force-one % query-sets)
                             points))]
-    (take k (sort-by first < results))))
+    (apply sorted-set (take k (sort-by first < results)))))
+
+(defn do-test2
+  ([k P & Q]
+     (let [r1 (apply brute-force-ggnnq k P Q)
+           r2 (apply ggnnq k P Q)]
+       (prn (pr-str r1))
+       (prn (pr-str r2))
+       (= r1 r2))))
+
+(defn do-test
+  
+  ([k p-size q-count q-size]
+     (let [p (gen-random-set p-size 100)
+           q1 (gen-random-set q-size 100)
+           q2 (gen-random-set q-size 100)
+           q3 (gen-random-set q-size 100)
+           r1 (brute-force-ggnnq k p q1 q2 q3)
+           r2 (ggnnq k p q1 q2 q3)]
+       (prn (pr-str r1))
+       (prn (pr-str r2))
+       (= r1 r2))))
+
+

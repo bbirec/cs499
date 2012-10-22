@@ -102,13 +102,16 @@
         idx (atom 0)]
     
     (while (and (or (empty? @result-set)
-                    #_true
+                    true
                     #_(some #(<= @threshold %) (map first @result-set))
-                    (< @threshold (apply max (map first @result-set))))
+                    #_(< @threshold (apply max (map first @result-set))))
                 (< @idx 100))
       (prn (str "Iteration : " @idx))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
+
+        (prn "Current pairs:" (pr-str next-pairs))
+        
         ;; Scores
         (let [results (map #(calc-score %1 %2 query-sets)
                            next-pairs

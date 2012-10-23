@@ -142,7 +142,7 @@
                      (= (count @result-set) k)
                      (< @threshold (apply max (map first @result-set)))))
                 (< @idx (count (first nearest-pairs))))
-      (prn (str "Iteration : " @idx))
+      #_(prn (str "Iteration : " @idx))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
 
@@ -174,7 +174,7 @@
           (let [t (find-threshold nearest-pairs @idx)
                 #_(apply min (map first candidates))
                 #_(reduce + (map #(dist-pair %) next-pairs))]
-            (prn (str "T:" t))
+            #_(prn (str "T:" t))
             (reset! threshold t)))
         
         ;; Increment idx
@@ -248,3 +248,16 @@
      (let [r1 (apply brute-force-ggnnq k P Q)
            r2 (apply ggnnq k P Q)]
        (check-result r1 r2))))
+
+(defn do-test3
+  [imp k p-size q-size]
+  (let [p (gen-random-set p-size 100)
+        q1 (gen-random-set q-size 100)
+        q2 (gen-random-set q-size 100)
+        q3 (gen-random-set q-size 100)
+        r (time (imp k p q1 q2 q3))]
+    (reset! lp p)
+    (reset! lq1 q1)
+    (reset! lq2 q2)
+    (reset! lq3 q3)
+    r))

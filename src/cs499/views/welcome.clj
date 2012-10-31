@@ -27,7 +27,8 @@
    [:h2 "Report and Papers"]
    [:div
     [:ul
-     [:li (link "Proposal" "https://docs.google.com/document/pub?id=1XvMMiIomaZMbtb9r_okDsAiY-Y9K0uKs66lI6I0oIJ0")]]]
+     [:li (link "Proposal" "https://docs.google.com/document/pub?id=1XvMMiIomaZMbtb9r_okDsAiY-Y9K0uKs66lI6I0oIJ0")]
+     [:li (link "Progress Report" "https://docs.google.com/document/pub?id=1oY9FpOKCvaevAn7-el_4eh4TDq1TQGhgqpZjEKryKyw")]]]
 
 
    [:h2 "Progress"]
@@ -37,7 +38,8 @@
     [:li "~ 2012. 10. 4 : Threshold Algorithm, Group Nearest Neighbor Queries 에 대한 논문 Reading, Proposal 작성 준비"]
     [:li "~ 2012. 10. 9 : Data crawling(from factual.com), Topic formal하게 정해보기, Baseline이 될 algorithm pseudo code 작성해 보기"]
     [:li "~ 2012. 10. 16 : Bruteforce방식으로 구현, 알고리즘 구현해서 비교해보기."]
-    [:li "~ 2012. 10. 23 : Threshold Algorithm방식으로 구현, Bruteforce방식과 비교"]]
+    [:li "~ 2012. 10. 23 : Threshold Algorithm방식으로 구현, Bruteforce방식과 비교"]
+    [:li "~ 2012. 10. 30 : TA방식 수정 및 Progress report작성."]]
 
    
    

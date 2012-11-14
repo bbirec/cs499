@@ -60,20 +60,20 @@
         add-to-result (fn [results]
                         (swap! result-set
                                #(reduce conj % results)))]
-
+    ;(prn (pr-str result-set))
     
-    (while (or (and (< (count @result-set) k)
-                    (some #(< (first %) (second %))
-                          (map vector @indices bound)))
-               (and (= (count @result-set) k)
-                    (< @threshold (first (last @result-set)))))
+    (while (and (some #(< (first %) (second %))
+                      (map vector @indices bound))
+                (or (< (count @result-set) k)
+                    (and (>= (count @result-set) k)
+                     (<= @threshold (first (last @result-set))))))
       (let [min-idx (next-min-index data-set @indices)
             current-points (get-points data-set
                                        (update-in (vec (map dec @indices))
                                                   [min-idx]
                                                   inc))]
 
-        (prn (pr-str @indices))
+        ;(prn (pr-str @indices))
 
         ;; Add to result set
         (let [p (nth current-points min-idx)
@@ -87,7 +87,8 @@
 
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
-
+        ;(prn "T : " (str @threshold))
+        
         ;; Update idx
         (swap! indices
                #(assoc % min-idx (+ (nth % min-idx) 1)))))
@@ -106,10 +107,11 @@
                         (swap! result-set
                                #(reduce conj % results)))]
     
-    (while (or (and (< (count @result-set) k)
-                    (< @idx (apply max (map count data-set))))
-               (and (= (count @result-set) k)
-                    (< @threshold (first (last @result-set)))))
+    (while (and (< @idx (apply max (map count data-set)))
+                (or (< (count @result-set) k)
+                    (and (>= (count @result-set) k)
+                         (<= @threshold (first (last @result-set))))))
+      ;(prn (pr-str @idx))
       (let [current-points (map (fn [d]
                                   (if (< @idx (count d))
                                     (nth d @idx)
@@ -127,7 +129,9 @@
               (apply com/cartesian-product others)))))
         
         ;; Update the threshold
-        (reset! threshold (get-threshold first-points current-points)))
+        (reset! threshold (get-threshold first-points current-points))
+        ;(prn "T : " (str @threshold))
+        )
 
       ;; Inc idx
       (swap! idx inc))
@@ -143,7 +147,7 @@
 ;; Test for group access, time, # of calc threshold
 ;; Variations : data size, k, # query set
 
-(def d (gen-data-set 5 5 100))
+(defonce d (gen-data-set 5 5 100))
 
 (defn check-time [qs ds k]
   (let [d (gen-data-set qs ds 1000)]
@@ -151,5 +155,7 @@
     ;;(time (brute-force d k))
     (prn "Round robin")
     (time (round-robin d k))
+    (prn "Greedy")
+    (time (greedy d k))
     nil))
 

@@ -12,3 +12,7 @@
   (concat (take idx coll)
           (list item)
           (take-last (- (count coll) idx) coll)))
+
+
+(defn min-index [coll]
+  (first (apply min-key second (map-indexed vector coll))))

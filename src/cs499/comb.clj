@@ -166,7 +166,8 @@
           gd (do
                (time (greedy d k)))]
       (if (equal-result? rr gd)
-        (do (prn "Result : "(pr-str rr))
+        (do (prn "Result")
+            (prn-result rr)
             true)
         (do
           #_(prn "Data : ")

@@ -67,7 +67,9 @@
         result-set (atom (sorted-set-by comp first-set))
         indices (atom (vec (take (count data-set) (repeat 1))))
         bound (map #(count %) data-set)
-        threshold (atom first-value)]
+        threshold (atom first-value)
+        count-threshold (atom 0)
+        count-access (atom 0)]
     
     (while (and (some #(< (first %) (second %))
                       (map vector @indices bound))
@@ -90,15 +92,24 @@
            k
            (map
             #(result-points (insert-item % min-idx p))
-            (apply com/cartesian-product others))))
+            (apply com/cartesian-product others)))
+          ;; Update the counter
+          (swap! count-access inc))
 
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
+
+        ;; Update the counter
+        (swap! count-threshold inc)
+
         
         ;; Update idx
         (swap! indices
                #(assoc % min-idx (+ (nth % min-idx) 1)))))
-    (take k @result-set)))
+    
+    {:count-threshold @count-threshold
+     :count-access @count-access
+     :result @result-set}))
 
 
 (defn round-robin [data-set k]
@@ -108,7 +119,9 @@
         comp #(< (first %1) (first %2))
         result-set (atom (sorted-set-by comp first-set))
         idx (atom 1)
-        threshold (atom first-value)]
+        threshold (atom first-value)
+        count-threshold (atom 0)
+        count-access (atom 0)]
     
     (while (and (< @idx (apply max (map count data-set)))
                 (or (< (count @result-set) k)
@@ -130,14 +143,22 @@
              k
              (map
               #(result-points (insert-item % i p))
-              (apply com/cartesian-product others)))))
+              (apply com/cartesian-product others)))
+
+            ;; Update the counter
+            (swap! count-access inc)))
         
         ;; Update the threshold
-        (reset! threshold (get-threshold first-points current-points)))
+        (reset! threshold (get-threshold first-points current-points))
+        ;; Update the counter
+        (swap! count-threshold inc))
+
 
       ;; Inc idx
       (swap! idx inc))
-    (take k @result-set)))
+    {:count-threshold @count-threshold
+     :count-access @count-access
+     :result @result-set}))
 
 
 
@@ -146,6 +167,8 @@
         results (map result-points products)]
     (take k (sort-by first < results))))
 
+
+
 ;; Test for group access, time, # of calc threshold
 ;; Variations : data size, k, # query set
 
@@ -153,24 +176,34 @@
 (defonce fd (atom nil))
 
 (defn prn-result [result]
-  (doseq [r (seq result)]
+  (prn (str "Access count: " (get result :count-access)))
+  (prn (str "Threshold count: " (get result :count-threshold)))
+  (prn (str "Elapsed time: " (get result :time)))
+  #_(doseq [r (seq (get result :result))]
     (prn (pr-str r))))
 
 (defn equal-result? [r1 r2]
   (every? true? (map #(= (first %1) (first %2)) r1 r2)))
 
+(defmacro with-time [expr]
+  `(let [start# (. System (nanoTime))
+         ret# ~expr]
+     (merge ret# {:time (/ (double (- (. System (nanoTime)) start#)) 1000000.0)})))
+
 (defn check-time
   ([d k]
-     (let [rr (time (round-robin d k))
-           gd (time (greedy d k))]
+     (let [rr (with-time (round-robin d k))
+           gd (with-time (greedy d k))]
        (if (equal-result? rr gd)
-         (do (prn "Result")
+         (do (prn "Round robin")
              (prn-result rr)
+             (prn "Greedy")
+             (prn-result gd)             
              true)
          (do
-           (prn "Round Robin : ")
+           (prn "Round Robin")
            (prn-result rr)
-           (prn "Greedy : ")
+           (prn "Greedy")
            (prn-result gd)
            (reset! fd d)
            false))))
@@ -178,4 +211,7 @@
      (check-time (gen-data-set qs ds 10000) k)))
 
 
+(defn test-avg [comb-func t qs ds k]
+  (dotimes [i t]
+    (let [d (gen-data-set qs ds 10000)])))
 

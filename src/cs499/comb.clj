@@ -190,6 +190,14 @@
          ret# ~expr]
      (merge ret# {:time (/ (double (- (. System (nanoTime)) start#)) 1000000.0)})))
 
+(defn test-avg-time [func t qs ds k]
+  (let [data (map (fn [_] (gen-data-set qs ds 10000)) (range t))
+        results (map (fn [d] (dissoc (with-time (func d k)) :result)) data)
+        avg (into {} (for [[k v] (apply merge-with + results)]
+               [k (double (/ v (count results)))]))]
+    avg))
+
+
 (defn check-time
   ([d k]
      (let [rr (with-time (round-robin d k))
@@ -210,8 +218,8 @@
   ([qs ds k]
      (check-time (gen-data-set qs ds 10000) k)))
 
-
-(defn test-avg [comb-func t qs ds k]
-  (dotimes [i t]
-    (let [d (gen-data-set qs ds 10000)])))
+(defn compare-algorithms
+  ([t qs ds k]
+     (list (test-avg-time round-robin t qs ds k)
+           (test-avg-time greedy t qs ds k))))
 

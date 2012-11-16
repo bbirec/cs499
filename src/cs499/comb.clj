@@ -46,21 +46,26 @@
                     possible)]
     (first (apply min-key #(second (second %)) points))))
 
+(defn comp [r1 r2]
+  (< (first r1) (first r2)))
+
+(defn add-to-result [result-set k new-results]
+  (swap! result-set
+         #(apply sorted-set-by comp
+                 (take k (seq (reduce conj % new-results))))))
+
+
+
 ;; Algorithm
 
 (defn greedy [data-set k]
   (let [first-points (map first data-set)
         first-value (sum-value first-points)
         first-set (conj first-points first-value)
-        comp #(< (first %1) (first %2))
         result-set (atom (sorted-set-by comp first-set))
         indices (atom (vec (take (count data-set) (repeat 1))))
         bound (map #(count %) data-set)
-        threshold (atom first-value)
-        add-to-result (fn [results]
-                        (swap! result-set
-                               #(reduce conj % results))
-                        #_(prn (pr-str results)))]
+        threshold (atom first-value)]
     
     (while (and (some #(< (first %) (second %))
                       (map vector @indices bound))
@@ -73,21 +78,20 @@
                                                   [min-idx]
                                                   inc))]
 
-        #_(prn (pr-str @indices))
-
         ;; Add to result set
         (let [p (nth current-points min-idx)
               others (map #(take %1 %2)
                           (keep-except min-idx @indices)
                           (keep-except min-idx data-set))]
           (add-to-result
+           result-set
+           k
            (map
             #(result-points (insert-item % min-idx p))
             (apply com/cartesian-product others))))
 
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
-        #_(prn "T : " (str @threshold))
         
         ;; Update idx
         (swap! indices
@@ -102,16 +106,12 @@
         comp #(< (first %1) (first %2))
         result-set (atom (sorted-set-by comp first-set))
         idx (atom 1)
-        threshold (atom first-value)
-        add-to-result (fn [results]
-                        (swap! result-set
-                               #(reduce conj % results)))]
+        threshold (atom first-value)]
     
     (while (and (< @idx (apply max (map count data-set)))
                 (or (< (count @result-set) k)
                     (and (>= (count @result-set) k)
                          (<= @threshold (first (nth (seq @result-set) (dec k)))))))
-      #_(prn (pr-str @idx))
       (let [current-points (map (fn [d]
                                   (if (< @idx (count d))
                                     (nth d @idx)
@@ -124,14 +124,14 @@
                 others (map #(take (+ @idx 1) %)
                             (keep-except i data-set))]
             (add-to-result
+             result-set
+             k
              (map
               #(result-points (insert-item % i p))
               (apply com/cartesian-product others)))))
         
         ;; Update the threshold
-        (reset! threshold (get-threshold first-points current-points))
-        #_(prn "T : " (str @threshold))
-        )
+        (reset! threshold (get-threshold first-points current-points)))
 
       ;; Inc idx
       (swap! idx inc))
@@ -159,25 +159,19 @@
 
 (defn check-time
   ([d k]
-     (let [bf nil #_(do
-               (time (brute-force d k)))
-          rr (do
-               (time (round-robin d k)))
-          gd (do
-               (time (greedy d k)))]
-      (if (equal-result? rr gd)
-        (do (prn "Result")
-            (prn-result rr)
-            true)
-        (do
-          #_(prn "Data : ")
-          (prn-result d)
-          (prn "Round Robin : ")
-          (prn-result rr)
-          (prn "Greedy : ")
-          (prn-result gd)
-          (reset! fd d)
-          false))))
+     (let [rr (time (round-robin d k))
+           gd (time (greedy d k))]
+       (if (equal-result? rr gd)
+         (do (prn "Result")
+             (prn-result rr)
+             true)
+         (do
+           (prn "Round Robin : ")
+           (prn-result rr)
+           (prn "Greedy : ")
+           (prn-result gd)
+           (reset! fd d)
+           false))))
   ([qs ds k]
      (check-time (gen-data-set qs ds 10000) k)))
 

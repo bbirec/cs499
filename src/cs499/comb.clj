@@ -49,10 +49,12 @@
 (defn comp [r1 r2]
   (< (first r1) (first r2)))
 
+(defn resize-sorted-set [size set]
+  (apply sorted-set-by comp (take size (seq set))))
+
 (defn add-to-result [result-set k new-results]
   (swap! result-set
-         #(apply sorted-set-by comp
-                 (take k (seq (reduce conj % new-results))))))
+         #(resize-sorted-set k (reduce conj % new-results))))
 
 
 

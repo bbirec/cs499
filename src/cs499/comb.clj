@@ -59,26 +59,26 @@
         threshold (atom first-value)
         add-to-result (fn [results]
                         (swap! result-set
-                               #(reduce conj % results)))]
-    ;(prn (pr-str result-set))
+                               #(reduce conj % results))
+                        #_(prn (pr-str results)))]
     
     (while (and (some #(< (first %) (second %))
                       (map vector @indices bound))
                 (or (< (count @result-set) k)
                     (and (>= (count @result-set) k)
-                     (<= @threshold (first (last @result-set))))))
+                     (<= @threshold (first (nth (seq @result-set) (dec k)))))))
       (let [min-idx (next-min-index data-set @indices)
             current-points (get-points data-set
                                        (update-in (vec (map dec @indices))
                                                   [min-idx]
                                                   inc))]
 
-        ;(prn (pr-str @indices))
+        #_(prn (pr-str @indices))
 
         ;; Add to result set
         (let [p (nth current-points min-idx)
               others (map #(take %1 %2)
-                          @indices
+                          (keep-except min-idx @indices)
                           (keep-except min-idx data-set))]
           (add-to-result
            (map
@@ -87,7 +87,7 @@
 
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
-        ;(prn "T : " (str @threshold))
+        #_(prn "T : " (str @threshold))
         
         ;; Update idx
         (swap! indices
@@ -110,8 +110,8 @@
     (while (and (< @idx (apply max (map count data-set)))
                 (or (< (count @result-set) k)
                     (and (>= (count @result-set) k)
-                         (<= @threshold (first (last @result-set))))))
-      ;(prn (pr-str @idx))
+                         (<= @threshold (first (nth (seq @result-set) (dec k)))))))
+      #_(prn (pr-str @idx))
       (let [current-points (map (fn [d]
                                   (if (< @idx (count d))
                                     (nth d @idx)
@@ -130,7 +130,7 @@
         
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
-        ;(prn "T : " (str @threshold))
+        #_(prn "T : " (str @threshold))
         )
 
       ;; Inc idx
@@ -148,14 +148,37 @@
 ;; Variations : data size, k, # query set
 
 (defonce d (gen-data-set 5 5 100))
+(defonce fd (atom nil))
 
-(defn check-time [qs ds k]
-  (let [d (gen-data-set qs ds 1000)]
-    ;;(prn "Brute force")
-    ;;(time (brute-force d k))
-    (prn "Round robin")
-    (time (round-robin d k))
-    (prn "Greedy")
-    (time (greedy d k))
-    nil))
+(defn prn-result [result]
+  (doseq [r (seq result)]
+    (prn (pr-str r))))
+
+(defn equal-result? [r1 r2]
+  (every? true? (map #(= (first %1) (first %2)) r1 r2)))
+
+(defn check-time
+  ([d k]
+     (let [bf nil #_(do
+               (time (brute-force d k)))
+          rr (do
+               (time (round-robin d k)))
+          gd (do
+               (time (greedy d k)))]
+      (if (equal-result? rr gd)
+        (do (prn "Result : "(pr-str rr))
+            true)
+        (do
+          #_(prn "Data : ")
+          (prn-result d)
+          (prn "Round Robin : ")
+          (prn-result rr)
+          (prn "Greedy : ")
+          (prn-result gd)
+          (reset! fd d)
+          false))))
+  ([qs ds k]
+     (check-time (gen-data-set qs ds 10000) k)))
+
+
 

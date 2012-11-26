@@ -86,15 +86,13 @@
         (let [p (nth current-points min-idx)
               others (map #(take %1 %2)
                           (keep-except min-idx @indices)
-                          (keep-except min-idx data-set))]
-          (add-to-result
-           result-set
-           k
-           (map
-            #(result-points (insert-item % min-idx p))
-            (apply com/cartesian-product others)))
+                          (keep-except min-idx data-set))
+              results (map
+                       #(result-points (insert-item % min-idx p))
+                       (apply com/cartesian-product others))]
+          (add-to-result result-set k results)
           ;; Update the counter
-          (swap! count-access inc))
+          (swap! count-access #(+ % (count results))))
 
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))
@@ -137,16 +135,14 @@
         (dotimes [i (count data-set)]
           (let [p (nth current-points i)
                 others (map #(take (+ @idx 1) %)
-                            (keep-except i data-set))]
-            (add-to-result
-             result-set
-             k
-             (map
-              #(result-points (insert-item % i p))
-              (apply com/cartesian-product others)))
+                            (keep-except i data-set))
+                results (map
+                         #(result-points (insert-item % i p))
+                         (apply com/cartesian-product others))]
+            (add-to-result result-set k results)
 
             ;; Update the counter
-            (swap! count-access inc)))
+            (swap! count-access #(+ % (count results)))))
         
         ;; Update the threshold
         (reset! threshold (get-threshold first-points current-points))

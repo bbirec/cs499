@@ -28,7 +28,9 @@
    [:div
     [:ul
      [:li (link "Proposal" "https://docs.google.com/document/pub?id=1XvMMiIomaZMbtb9r_okDsAiY-Y9K0uKs66lI6I0oIJ0")]
-     [:li (link "Progress Report" "https://docs.google.com/document/pub?id=1oY9FpOKCvaevAn7-el_4eh4TDq1TQGhgqpZjEKryKyw")]]]
+     [:li (link "Progress Report" "https://docs.google.com/document/pub?id=1oY9FpOKCvaevAn7-el_4eh4TDq1TQGhgqpZjEKryKyw")]
+     [:li (link "Round robin방식과 Greedy방식의 성능 비교"
+                "https://docs.google.com/spreadsheet/pub?key=0An4WkgSdbRHxdGU4Y2VFeDBrdW1kWEVXS09fYkV3emc&output=html")]]]
 
 
    [:h2 "Progress"]
@@ -40,7 +42,9 @@
     [:li "~ 2012. 10. 16 : Bruteforce방식으로 구현, 알고리즘 구현해서 비교해보기."]
     [:li "~ 2012. 10. 23 : Threshold Algorithm방식으로 구현, Bruteforce방식과 비교"]
     [:li "~ 2012. 10. 30 : TA방식 수정 및 Progress report작성."]
-    [:li "~ 2012. 11. 8 : TA방식의 문제점 파악 및 해결 방법 생각하기."]]
+    [:li "~ 2012. 11. 8 : TA방식의 문제점 파악 및 해결 방법 생각하기."]
+    [:li "~ 2012. 11. 20 : Sub-problem의 Round robin 방식, Greedy 방식 구현 및 성능 비교"]
+    [:li "~ 2012. 11. 27 : 원래 문제에 sub-problem에 greedy방식으로 넣어 구현.."]]
 
    
    

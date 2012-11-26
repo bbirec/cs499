@@ -1,5 +1,5 @@
 (ns cs499.ggnnq
-  (:require [clojure.math.numeric-tower :as math])
+  (:use cs499.util)
   (:require [clojure.math.combinatorics :as comb]))
 
 (defn gen-random-set
@@ -10,65 +10,7 @@
                  #(vector (rand-int bound) (rand-int bound))))))
 
 
-(defn round-places
-  "Round the float number to have the given number of decimals"
-  [number decimals]
-  (let [factor (math/expt 10 decimals)]
-    (bigdec (/ (math/round (* factor number)) factor))))
-
-(defn dist
-  "Euclidean distance between two points."
-  [p1 p2]
-  (round-places (math/sqrt (reduce +
-                                   (map #(math/expt (- %1 %2) 2) p1 p2)))
-                2))
-
-(defn dist-pair
-  "Distance of point pair"
-  [pair]
-  (reduce dist pair))
-
-
-
-
-
-(defn nearest-sort
-  "Return sorted query set Q by distances from the given point p."
-  [p Q]
-  (sort (fn [q1 q2] (< (dist p q1)
-                       (dist p q2)))
-        Q))
-
-(defn nearest-point
-  "Find the nearest point q from p"
-  [p Q]
-  (first (nearest-sort p Q)))
-
-
-
-
-(defn nearest-pair-sort
-  "Return pair set sorted by the distance between two point in each set."
-  [P Q]
-  (sort (fn [pair1 pair2] (< (dist-pair pair1)
-                             (dist-pair pair2)))
-        (for [p P q Q] (vector p q))))
-
-
-
 ;; Assume that all of points are distinguishable
-
-(defn keep-except
-  "Keep sequence except the given indexed item."
-  [idx coll]
-  (keep-indexed #(if-not (= idx %1) %2) coll))
-
-(defn insert-item
-  "Insert an item into coll at idx"
-  [coll idx item]
-  (concat (take idx coll)
-          (list item)
-          (take-last (- (count coll) idx) coll)))
 
 (defn rac
   ([nearest-pairs col row]
@@ -101,7 +43,6 @@
         remains (keep-except col nearest-pairs)
         founds (map #(find-pairs % row p) remains)
         possibles (apply comb/cartesian-product founds)]
-    #_(prn "Pair:" (pr-str pair) " Possibles:" (pr-str possibles))
     (map #(apply make-result-form pair col %) possibles)))
 
 
@@ -135,46 +76,28 @@
         threshold (atom 0)
         result-set (atom #{})
         idx (atom 0)]
-    #_(prn "NNP" (pr-str nearest-pairs))
     (while (and (or (empty? @result-set)
                     (< (count @result-set) k)
                     (and
                      (= (count @result-set) k)
                      (< @threshold (apply max (map first @result-set)))))
                 (< @idx (count (first nearest-pairs))))
-      #_(prn (str "Iteration : " @idx))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
-
-        #_(prn "Current pairs:" (pr-str next-pairs))
         
         ;; Scores
         (let [candidates (apply concat
                                 (map #(find-candidates nearest-pairs @idx %)
                                      (range (count query-sets))))]
 
-          #_(prn "Candidates:" (pr-str candidates))
-          #_(if (some #{[62.23M [52 54] [[41 50] [66 38] [81 50]]]}
-                    candidates)
-            (prn (pr-str candidates)))
-          
           ;; Adding to the final set
           (reset! result-set
                   (new-result-set @result-set
                                   k
                                   (apply sorted-set candidates)))
-          #_(prn "Now result map has " (str (count @result-set)))
 
-          #_(if (some #{[62.23M [52 54] [[41 50] [66 38] [81 50]]]}
-                    candidates)
-            (prn (pr-str @result-set)))
-
-          
           ;; Set threshold
-          (let [t (find-threshold nearest-pairs @idx)
-                #_(apply min (map first candidates))
-                #_(reduce + (map #(dist-pair %) next-pairs))]
-            #_(prn (str "T:" t))
+          (let [t (find-threshold nearest-pairs @idx)]
             (reset! threshold t)))
         
         ;; Increment idx
@@ -205,8 +128,8 @@
 ;; Test
 
 (defn check-result [r1 r2]
-  (prn (pr-str r1))
-  (prn (pr-str r2))
+  #_(prn (pr-str r1))
+  #_(prn (pr-str r2))
   (if (= r1 r2)
     true
     (do

@@ -64,3 +64,22 @@
                              (dist-pair pair2)))
         (for [p P q Q] (vector p q))))
 
+
+
+(defn first-<
+  [r1 r2]
+  (let [c (compare (first r1) (first r2))]
+    (if (not= c 0)
+      c
+      (compare r1 r2))))
+
+(defn resize-sorted-set [size set]
+  (apply sorted-set-by first-< (take size (seq set))))
+
+(defn add-to-result [result-set k new-results]
+  (swap! result-set
+         #(resize-sorted-set k (reduce conj % new-results))))
+
+
+(defn equal-result? [r1 r2]
+  (every? true? (map #(= (first %1) (first %2)) r1 r2)))

@@ -46,13 +46,6 @@
     (map #(apply make-result-form pair col %) possibles)))
 
 
-(defn new-result-set
-  "Return the new result set(size=k) with the new item."
-  [s k results]
-  (apply sorted-set
-         (take k (apply sorted-set-by
-                        #(<= (first %1) (first %2))
-                        (clojure.set/union s results)))))
 
 (defn threshold
   [nearest-pairs row col]
@@ -74,7 +67,7 @@
   [k points & query-sets]
   (let [nearest-pairs (map #(nearest-pair-sort points %) query-sets)
         threshold (atom 0)
-        result-set (atom #{})
+        result-set (atom (sorted-set-by first-<))
         idx (atom 0)]
     (while (and (or (empty? @result-set)
                     (< (count @result-set) k)
@@ -91,10 +84,7 @@
                                      (range (count query-sets))))]
 
           ;; Adding to the final set
-          (reset! result-set
-                  (new-result-set @result-set
-                                  k
-                                  (apply sorted-set candidates)))
+          (add-to-result result-set k candidates)
 
           ;; Set threshold
           (let [t (find-threshold nearest-pairs @idx)]
@@ -127,27 +117,32 @@
 
 ;; Test
 
+(defonce fr1 (atom nil))
+(defonce fr2 (atom nil))
+
 (defn check-result [r1 r2]
   #_(prn (pr-str r1))
   #_(prn (pr-str r2))
-  (if (= r1 r2)
+  (if (equal-result? r1 r2)
     true
     (do
+      (reset! fr1 r1)
+      (reset! fr2 r2)
       (prn (pr-str (clojure.set/difference r1 r2)))
       (prn (pr-str (clojure.set/difference r2 r1)))
       false)))
 
 
-(def lp
+(defonce lp
   (atom
    #{[33 1] [31 0] [52 54] [20 57] [23 68] [25 15] [35 91] [71 64] [23 51] [2 64]}))
-(def lq1
+(defonce lq1
   (atom
    #{[31 66] [30 4] [41 50] [79 27] [63 11] [6 83] [31 16] [34 85] [17 36] [57 20]}))
-(def lq2
+(defonce lq2
   (atom
    #{[41 13] [7 75] [93 1] [95 3] [66 38] [59 6] [69 19] [91 83] [56 18] [90 88]}))
-(def lq3
+(defonce lq3
   (atom
    #{[77 45] [81 50] [76 46] [13 84] [55 32] [36 49] [36 19] [12 27] [70 22] [58 77]}))
 

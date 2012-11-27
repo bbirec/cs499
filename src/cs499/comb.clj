@@ -46,15 +46,6 @@
                     possible)]
     (first (apply min-key #(second (second %)) points))))
 
-(defn comp [r1 r2]
-  (< (first r1) (first r2)))
-
-(defn resize-sorted-set [size set]
-  (apply sorted-set-by comp (take size (seq set))))
-
-(defn add-to-result [result-set k new-results]
-  (swap! result-set
-         #(resize-sorted-set k (reduce conj % new-results))))
 
 
 
@@ -64,7 +55,7 @@
   (let [first-points (map first data-set)
         first-value (sum-value first-points)
         first-set (conj first-points first-value)
-        result-set (atom (sorted-set-by comp first-set))
+        result-set (atom (sorted-set-by first-< first-set))
         indices (atom (vec (take (count data-set) (repeat 1))))
         bound (map #(count %) data-set)
         threshold (atom first-value)
@@ -114,8 +105,7 @@
   (let [first-points (map first data-set)
         first-value (sum-value first-points)
         first-set (conj first-points first-value)
-        comp #(< (first %1) (first %2))
-        result-set (atom (sorted-set-by comp first-set))
+        result-set (atom (sorted-set-by first-< first-set))
         idx (atom 1)
         threshold (atom first-value)
         count-threshold (atom 0)
@@ -178,8 +168,6 @@
   #_(doseq [r (seq (get result :result))]
     (prn (pr-str r))))
 
-(defn equal-result? [r1 r2]
-  (every? true? (map #(= (first %1) (first %2)) r1 r2)))
 
 (defmacro with-time [expr]
   `(let [start# (. System (nanoTime))

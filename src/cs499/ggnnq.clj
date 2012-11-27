@@ -79,9 +79,8 @@
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
         
         ;; Scores
-        (let [candidates (apply concat
-                                (map #(find-candidates nearest-pairs @idx %)
-                                     (range (count query-sets))))]
+        (let [candidates (mapcat #(find-candidates nearest-pairs @idx %)
+                                 (range (count query-sets)))]
 
           ;; Adding to the final set
           (add-to-result result-set k candidates)

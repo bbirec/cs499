@@ -29,7 +29,7 @@
   (let [p (first pair)
         q (second pair)
         qs (into [] (insert-item (map second rest) col q))
-        d (+ (dist-pair pair )
+        d (+ (dist-pair pair)
              (reduce + (map dist-pair rest)))]
     [d p qs]))
 

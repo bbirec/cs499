@@ -2,15 +2,13 @@
   (:use cs499.util)
   (:require [clojure.math.combinatorics :as comb]))
 
-(defn gen-random-set
-  "Generate random point set."
+(defn gen-random-points
+  "Generate N random points with number bound."
   [n bound]
-  (into #{}
-        (take n (repeatedly
-                 #(vector (rand-int bound) (rand-int bound))))))
+  (map (fn [_] (vector (rand-int bound) (rand-int bound)))
+       (range n)))
 
 
-;; Assume that all of points are distinguishable
 
 (defn rac
   ([nearest-pairs col row]
@@ -46,7 +44,6 @@
     (map #(apply make-result-form pair col %) possibles)))
 
 
-
 (defn threshold
   [nearest-pairs row col]
   (let [pair (rac nearest-pairs col row)
@@ -61,6 +58,7 @@
   (let [ths (map #(threshold nearest-pairs row %)
                  (range (count nearest-pairs)))]
     (apply min ths)))
+
 
 (defn ggnnq
   "GGNNQ"
@@ -108,9 +106,7 @@
 
 (defn brute-force-ggnnq
   [k points & query-sets]
-  (let [results (apply concat
-                        (map #(apply brute-force-one % query-sets)
-                            points))]
+  (let [results (mapcat #(apply brute-force-one % query-sets) points)]
     (apply sorted-set (take k (sort-by first < results)))))
 
 
@@ -147,10 +143,10 @@
 
 (defn do-test
   ([k p-size q-count q-size]
-     (let [p (gen-random-set p-size 100)
-           q1 (gen-random-set q-size 100)
-           q2 (gen-random-set q-size 100)
-           q3 (gen-random-set q-size 100)
+     (let [p (gen-random-points p-size 100)
+           q1 (gen-random-points q-size 100)
+           q2 (gen-random-points q-size 100)
+           q3 (gen-random-points q-size 100)
            r1 (brute-force-ggnnq k p q1 q2 q3)
            r2 (ggnnq k p q1 q2 q3)]
        (reset! lp p)
@@ -168,10 +164,10 @@
 
 (defn do-test3
   [imp k p-size q-size]
-  (let [p (gen-random-set p-size 100)
-        q1 (gen-random-set q-size 100)
-        q2 (gen-random-set q-size 100)
-        q3 (gen-random-set q-size 100)
+  (let [p (gen-random-points p-size 100)
+        q1 (gen-random-points q-size 100)
+        q2 (gen-random-points q-size 100)
+        q3 (gen-random-points q-size 100)
         r (time (imp k p q1 q2 q3))]
     (reset! lp p)
     (reset! lq1 q1)

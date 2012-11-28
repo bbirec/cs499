@@ -59,7 +59,6 @@
                  (range (count nearest-pairs)))]
     (apply min ths)))
 
-
 (defn ggnnq
   "GGNNQ"
   [k points & query-sets]
@@ -75,13 +74,12 @@
                 (< @idx (count (first nearest-pairs))))
       
       (let [next-pairs (map #(nth % @idx) nearest-pairs)]
-        
-        ;; Scores
-        (let [candidates (mapcat #(find-candidates nearest-pairs @idx %)
-                                 (range (count query-sets)))]
+        ;; Find results from each query sets
+        (let [result (mapcat #(find-candidates nearest-pairs @idx %)
+                             (range (count query-sets)))]
 
-          ;; Adding to the final set
-          (add-to-result result-set k candidates)
+          ;; Adding to the result set
+          (add-to-result result-set k result)
 
           ;; Set threshold
           (let [t (find-threshold nearest-pairs @idx)]

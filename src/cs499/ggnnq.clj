@@ -1,12 +1,7 @@
 (ns cs499.ggnnq
   (:use cs499.util)
+  (:import [cs499.util Point Result])
   (:require [clojure.math.combinatorics :as comb]))
-
-(defn gen-random-points
-  "Generate N random points with number bound."
-  [n bound]
-  (map (fn [_] (vector (rand-int bound) (rand-int bound)))
-       (range n)))
 
 
 
@@ -16,32 +11,24 @@
   ([nearest-pairs col]
      (nth nearest-pairs col)))
 
-(defn find-pairs
-  "Find all pairs starting from given p until it reaches to row. At least one, the closest pair, is returned."
-  [pairs row p]
-  (let [found (filter #(= (first %) p) (take (+ row 1) pairs))]
-    (if (empty? found)
-      (take 1 (filter #(= (first %) p) pairs))
-      found)))
 
-(defn make-result-form
-  [pair col & rest]
-  (let [p (first pair)
-        q (second pair)
-        qs (into [] (insert-item (map second rest) col q))
-        d (+ (dist-pair pair)
-             (reduce + (map dist-pair rest)))]
-    [d p qs]))
+(defn find-same-origin-pairs
+  "Find all pairs starting from given p until it reaches to row. At least one, the closest pair, is returned."
+  [pairs row pair]
+  (let [found (filter #(= (:p %) (:p pair))
+                      (take (+ row 1) pairs))]
+    (if (empty? found)
+      (take 1 (filter #(= (:p %) (:p pair)) pairs))
+      found)))
 
 (defn find-candidates
   [nearest-pairs row col]
   (let [pair (rac nearest-pairs col row)
-        p (first pair)
-        q (second pair)
         remains (keep-except col nearest-pairs)
-        founds (map #(find-pairs % row p) remains)
+        founds (map #(find-same-origin-pairs % row pair) remains)
         possibles (apply comb/cartesian-product founds)]
-    (map #(apply make-result-form pair col %) possibles)))
+    (map #(apply gen-result (insert-item % col pair))
+         possibles)))
 
 
 (defn threshold
@@ -49,8 +36,8 @@
   (let [pair (rac nearest-pairs col row)
         remains (keep-except col nearest-pairs)
         first-pairs (map first remains)
-        first-dists (map #(dist-pair %) first-pairs)]
-    (+ (dist-pair pair)
+        first-dists (map :dist first-pairs)]
+    (+ (:dist pair)
        (reduce + first-dists))))
 
 (defn find-threshold
@@ -64,29 +51,27 @@
   [k points & query-sets]
   (let [nearest-pairs (map #(nearest-pair-sort points %) query-sets)
         threshold (atom 0)
-        result-set (atom (sorted-set-by first-<))
+        result-set (atom (sorted-set-by result-<))
         idx (atom 0)]
+    
     (while (and (or (empty? @result-set)
                     (< (count @result-set) k)
                     (and
                      (= (count @result-set) k)
-                     (< @threshold (apply max (map first @result-set)))))
+                     (< @threshold (apply max (map :dist @result-set)))))
                 (< @idx (count (first nearest-pairs))))
       
-      (let [next-pairs (map #(nth % @idx) nearest-pairs)]
-        ;; Find results from each query sets
-        (let [result (mapcat #(find-candidates nearest-pairs @idx %)
-                             (range (count query-sets)))]
+      ;; Find results from each query sets
+      (let [result (mapcat #(find-candidates nearest-pairs @idx %)
+                           (range (count query-sets)))]
+        ;; Adding to the result set
+        (add-to-result result-set k result))
+      
+      ;; Set threshold
+      (reset! threshold (find-threshold nearest-pairs @idx))
 
-          ;; Adding to the result set
-          (add-to-result result-set k result)
-
-          ;; Set threshold
-          (let [t (find-threshold nearest-pairs @idx)]
-            (reset! threshold t)))
-        
-        ;; Increment idx
-        (swap! idx inc)))
+      ;; Increment idx
+      (swap! idx inc))
     @result-set))
 
 
@@ -96,16 +81,18 @@
   [p & query-sets]
   (let [q-points (apply comb/cartesian-product query-sets)]
     (map (fn [points]
-           (vector (reduce + (map #(dist-pair (vector p %))
-                                  points))
-                   p
-                   (into []  points)))
+           (Result. (reduce
+                     +
+                     (map #(dist (vals p) (vals %))
+                          points))
+                    p
+                    points))
          q-points)))
 
 (defn brute-force-ggnnq
   [k points & query-sets]
   (let [results (mapcat #(apply brute-force-one % query-sets) points)]
-    (apply sorted-set (take k (sort-by first < results)))))
+    (apply sorted-set (take k (sort-by :dist < results)))))
 
 
 ;; Test

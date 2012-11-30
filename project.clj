@@ -4,6 +4,7 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/math.numeric-tower "0.0.1"]
                  [org.clojure/data.json "0.1.2"]
+                 [org.clojure/tools.trace "0.7.3"]
                  [clj-time "0.4.4"]
                  [noir "1.2.1"]
                  [factual/factual-clojure-driver "1.4.3"]

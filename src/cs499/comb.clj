@@ -1,5 +1,7 @@
 (ns cs499.comb
+  (:use [clojure.tools.trace])
   (:use [cs499.util])
+  (:import [cs499.util Point])
   (:require [clojure.math.combinatorics :as com]))
 
 ;; Sorted combination
@@ -15,8 +17,27 @@
                 sorted)))
        (range num-of-query)))
 
+(defn first-<
+  [r1 r2]
+  (let [c (compare (first r1) (first r2))]
+    (if (not= c 0)
+      c
+      (compare r1 r2))))
+
+(defn resize-sorted-set [size set]
+  (apply sorted-set-by first-< (take size (seq set))))
+
+(defn add-to-result [result-set k new-results]
+  (swap! result-set
+         #(resize-sorted-set k (reduce conj % new-results))))
+
+(defn equal-result? [r1 r2]
+  (every? true? (map #(= (first %1) (first %2)) r1 r2)))
+
+
 (defn sum-value [points]
   (reduce + (map second points)))
+
 
 (defn get-threshold [first-points current-points]
   (apply min
@@ -27,8 +48,10 @@
                       (nth current-points i)))
                    (range (count first-points))))))
 
+
+
 (defn result-points [points]
-  (conj points (sum-value points)))
+  (vec (conj points (sum-value points))))
 
 (defn get-points [data-set indices]
   (map #(let [points (nth data-set %1)]
@@ -55,7 +78,8 @@
   (let [first-points (map first data-set)
         first-value (sum-value first-points)
         first-set (conj first-points first-value)
-        result-set (atom (sorted-set-by first-< first-set))
+        result-set (atom (sorted-set-by first-<
+                                        (vec first-set)))
         indices (atom (vec (take (count data-set) (repeat 1))))
         bound (map #(count %) data-set)
         threshold (atom first-value)
@@ -105,7 +129,8 @@
   (let [first-points (map first data-set)
         first-value (sum-value first-points)
         first-set (conj first-points first-value)
-        result-set (atom (sorted-set-by first-< first-set))
+        result-set (atom (sorted-set-by first-<
+                                        (vec first-set)))
         idx (atom 1)
         threshold (atom first-value)
         count-threshold (atom 0)
@@ -151,7 +176,9 @@
 (defn brute-force [data-set k]
   (let [products (apply com/cartesian-product data-set)
         results (map result-points products)]
-    (take k (sort-by first < results))))
+    {:count-threshold 0
+     :count-access 0
+     :result (take k (sort-by first < results))}))
 
 
 

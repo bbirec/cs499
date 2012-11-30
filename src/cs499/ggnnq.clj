@@ -1,8 +1,41 @@
 (ns cs499.ggnnq
   (:use cs499.util)
-  (:import [cs499.util Point Result])
+  (:import [cs499.util Point])
   (:require [clojure.math.combinatorics :as comb]))
 
+(defrecord Result [dist p qs]
+  java.lang.Comparable
+  (compareTo [this o]
+    (let [c (compare (:dist this) (:dist o))]
+     (if (not= c 0)
+       c
+       (if (= this o) 0 1)))))
+
+(defn gen-result
+  [& pairs]
+  (assert (> (count pairs) 0)
+          "Need at least one pair.")
+  (let [point (:p (first pairs))]
+    (assert (every? #(= point (:p %)) pairs)
+            "All of p should be equal")
+    (Result.
+     (reduce + (map :dist pairs))
+     point
+     (map :q pairs))))
+
+(defn result-<
+  [r1 r2]
+  (compare r1 r2))
+
+(defn resize-sorted-set [size set]
+  (apply sorted-set-by result-< (take size (seq set))))
+
+(defn add-to-result [result-set k new-results]
+  (swap! result-set
+         #(resize-sorted-set k (reduce conj % new-results))))
+
+(defn equal-result? [r1 r2]
+  (every? true? (map #(= (:dist %1) (:dist %2)) r1 r2)))
 
 
 (defn rac

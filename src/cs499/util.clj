@@ -45,17 +45,24 @@
 
 (defrecord Pair [dist p q])
 
+(defn gen-random-point [bound]
+  (Point. (rand-int bound) (rand-int bound)))
 
 (defn gen-random-points
   "Generate N random points with number bound."
   [n bound]
-  (map (fn [_] (Point. (rand-int bound) (rand-int bound)))
+  (map (fn [_] (gen-random-point bound))
        (range n)))
 
 (defn gen-pair
   "Making a point pair with the distance between two points."
   [p q]
   (Pair. (dist (vals p) (vals q)) p q))
+
+(defn gen-random-pairs [n bound]
+  (map (fn [_] (gen-pair (gen-random-point bound)
+                         (gen-random-point bound)))
+       (range n)))
 
 
 (defn nearest-pair-sort

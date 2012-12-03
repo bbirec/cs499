@@ -1,6 +1,7 @@
 (ns cs499.ggnnq
   (:use cs499.util)
-  (:import [cs499.util Point])
+  (:import [cs499.util Point Pair])
+  (:use [cs499.comb :only [greedy round-robin brute-force]])
   (:require [clojure.math.combinatorics :as comb]))
 
 (defrecord Result [dist p qs]
@@ -45,6 +46,21 @@
      (nth nearest-pairs col)))
 
 
+(defn k-combination
+  "Getting top k combination of the given pairs."
+  [algorithm k & pairs]
+  (let [inputs (map #(map (fn [i d] (vector i (:dist d))) (range) %) pairs)
+        result (:result (algorithm inputs k))
+        indices (map
+                 (fn [[d & points]]
+                   (map first points))
+                 result)]
+    (map #(map (fn [i j] (nth (nth pairs i) j))
+               (range)
+               %)
+         indices)))
+
+
 (defn find-same-origin-pairs
   "Find all pairs starting from given p until it reaches to row. At least one, the closest pair, is returned."
   [pairs row pair]
@@ -54,12 +70,13 @@
       (take 1 (filter #(= (:p %) (:p pair)) pairs))
       found)))
 
-(defn find-candidates
-  [nearest-pairs row col]
+(defn find-results
+  [nearest-pairs row col k]
   (let [pair (rac nearest-pairs col row)
         remains (keep-except col nearest-pairs)
         founds (map #(find-same-origin-pairs % row pair) remains)
-        possibles (apply comb/cartesian-product founds)]
+        possibles
+        (apply k-combination greedy k founds)]
     (map #(apply gen-result (insert-item % col pair))
          possibles)))
 
@@ -95,7 +112,7 @@
                 (< @idx (count (first nearest-pairs))))
       
       ;; Find results from each query sets
-      (let [result (mapcat #(find-candidates nearest-pairs @idx %)
+      (let [result (mapcat #(find-results nearest-pairs @idx % k)
                            (range (count query-sets)))]
         ;; Adding to the result set
         (add-to-result result-set k result))

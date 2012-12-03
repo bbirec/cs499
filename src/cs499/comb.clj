@@ -182,6 +182,8 @@
 
 
 
+
+
 ;; Test for group access, time, # of calc threshold
 ;; Variations : data size, k, # query set
 
@@ -205,7 +207,7 @@
   (let [data (map (fn [_] (gen-data-set qs ds 10000)) (range t))
         results (map (fn [d] (dissoc (with-time (func d k)) :result)) data)
         avg (into {} (for [[k v] (apply merge-with + results)]
-               [k (double (/ v (count results)))]))]
+                       [k (double (/ v (count results)))]))]
     avg))
 
 

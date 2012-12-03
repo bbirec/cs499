@@ -159,6 +159,13 @@
   (atom
    #{[77 45] [81 50] [76 46] [13 84] [55 32] [36 49] [36 19] [12 27] [70 22] [58 77]}))
 
+(defn check-ggnnq [k np cq nq]
+  (let [p (gen-random-points np 10000)
+        qs (map (fn [_] (gen-random-points nq 10000))
+                (range cq))]
+    (time (apply ggnnq k p qs))
+    nil))
+
 (defn do-test
   ([k p-size q-count q-size]
      (let [p (gen-random-points p-size 100)

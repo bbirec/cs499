@@ -35,7 +35,18 @@
                                    (map #(math/expt (- %1 %2) 2) p1 p2)))
                 2))
 
+;;
 
+(defmacro with-time [expr]
+  `(let [start# (. System (nanoTime))
+         ret# ~expr]
+     (merge ret# {:time (/ (double (- (. System (nanoTime)) start#)) 1000000.0)})))
+
+(defn avg
+  "Calculate the avg for map values"
+  [coll]
+  (into {} (for [[k v] (apply merge-with + coll)]
+             [k (double (/ v (count coll)))])))
 
 ;; Data types
 
@@ -48,24 +59,26 @@
   java.lang.Comparable
   (compareTo [this o] (compare (:dist this) (:dist o))))
 
-(defn gen-random-point [bound]
-  (Point. (rand-int bound) (rand-int bound)))
+(def default-random-max 10000)
+
+(defn gen-random-point
+  ([]
+     (gen-random-point default-random-max))
+  ([bound]
+     (Point. (rand-int bound) (rand-int bound))))
 
 (defn gen-random-points
   "Generate N random points with number bound."
-  [n bound]
-  (map (fn [_] (gen-random-point bound))
-       (range n)))
+  ([n]
+     (gen-random-points n default-random-max))
+  ([n bound]
+     (map (fn [_] (gen-random-point bound))
+          (range n))))
 
 (defn gen-pair
   "Making a point pair with the distance between two points."
   [^Point p ^Point q]
   (Pair. (dist (vals p) (vals q)) p q))
-
-(defn gen-random-pairs [n bound]
-  (map (fn [_] (gen-pair (gen-random-point bound)
-                         (gen-random-point bound)))
-       (range n)))
 
 
 (defn nearest-pair-sort
@@ -81,19 +94,6 @@
    (for [p P q Q]
      (gen-pair p q))))
 
-(defn gen-random-pair-sort [pds qds cq]
-  (let [ps (gen-random-points pds 1000)
-        qs (map (fn [_] (gen-random-points qds 10000))
-                (range cq))]
-    (map #(nearest-pair-sort ps %) qs)))
-
-;; Dump sample data
-
-(defn dump-data [fp val]
-  (with-open [f (writer fp)]
-    (.write f (pr-str val))))
-
-(defn load-data [fp]
-  (read-string (slurp fp)))
-
+(defn gen-nearest-pair-sort [p qs]
+  (map #(nearest-pair-sort p %) qs))
 

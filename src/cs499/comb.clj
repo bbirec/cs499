@@ -198,17 +198,11 @@
     (prn (pr-str r))))
 
 
-(defmacro with-time [expr]
-  `(let [start# (. System (nanoTime))
-         ret# ~expr]
-     (merge ret# {:time (/ (double (- (. System (nanoTime)) start#)) 1000000.0)})))
 
 (defn test-avg-time [func t qs ds k]
   (let [data (map (fn [_] (gen-data-set qs ds 10000)) (range t))
-        results (map (fn [d] (dissoc (with-time (func d k)) :result)) data)
-        avg (into {} (for [[k v] (apply merge-with + results)]
-                       [k (double (/ v (count results)))]))]
-    avg))
+        results (map (fn [d] (dissoc (with-time (func d k)) :result)) data)]
+    (avg results)))
 
 
 (defn check-time

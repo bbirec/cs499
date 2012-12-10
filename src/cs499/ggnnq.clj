@@ -126,7 +126,7 @@
 
          ;; Increment idx
          (swap! idx inc))
-       @result-set))
+       {:result @result-set}))
   ([k k-comb points & query-sets]
      (ggnnq k k-comb (map #(nearest-pair-sort points %) query-sets))))
 
@@ -148,16 +148,31 @@
 (defn brute-force-ggnnq
   [k points & query-sets]
   (let [results (mapcat #(apply brute-force-one % query-sets) points)]
-    (apply sorted-set (take k (sort-by :dist < results)))))
+    {:result (apply sorted-set (take k (sort-by :dist < results)))}))
 
 
 ;; Test
 
-
-
 (defn check-ggnnq [k ds cq]
-  (let [nps (gen-random-pair-sort ds ds cq)]
-    (prn (str "Generated " (count nps) " pairs"))
-    (time (ggnnq k :greedy nps))
-    (time (ggnnq k :round-robin nps))
-    nil))
+  (let [p (gen-random-points ds)
+        qs (map (fn [_] (gen-random-points ds))
+                (range cq))]
+    ;; Brute force algorithm
+    #_(do
+      (prn "Brute force")
+      (time (apply brute-force-ggnnq k p qs)))
+
+    (let [nps (gen-nearest-pair-sort p qs)
+          ; Use the data to eval laziness
+          _ (prn (str "Generated " (count nps) " nearest pairs"))
+
+          _ (prn "Starting the greedy")
+          gd (with-time (ggnnq k :greedy nps))
+          _ (prn "Starting the round robin")
+          rr (with-time (ggnnq k :round-robin nps))]
+      {:greedy (:time gd) :rr (:time rr)})))
+
+(defn test-avg-time [t qs ds k]
+  (avg (map (fn [_] (check-ggnnq k ds qs))
+            (range t))))
+

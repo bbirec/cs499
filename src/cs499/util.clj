@@ -1,4 +1,5 @@
 (ns cs499.util
+  (:use [clojure.java.io :only [writer]])
   (:require [clojure.math.numeric-tower :as math]))
 
 
@@ -43,7 +44,9 @@
   (compareTo [this o] (and (compare (:x this) (:x o))
                            (compare (:y this) (:y o)))))
 
-(defrecord Pair [dist p q])
+(defrecord Pair [dist p q]
+  java.lang.Comparable
+  (compareTo [this o] (compare (:dist this) (:dist o))))
 
 (defn gen-random-point [bound]
   (Point. (rand-int bound) (rand-int bound)))
@@ -56,7 +59,7 @@
 
 (defn gen-pair
   "Making a point pair with the distance between two points."
-  [p q]
+  [^Point p ^Point q]
   (Pair. (dist (vals p) (vals q)) p q))
 
 (defn gen-random-pairs [n bound]
@@ -68,13 +71,23 @@
 (defn nearest-pair-sort
   "Return pair set sorted by the distance between two point in each set. [dist pair]"
   [P Q]
+  #_(apply sorted-set (for [^Point p P ^Point q Q]
+                        (gen-pair p q)))
+  #_(let [result (atom (sorted-set))]
+    (for [p P q Q]
+      (swap! result #(conj %1 (gen-pair p q)))))
   (sort-by
    :dist
    (for [p P q Q]
      (gen-pair p q))))
 
+;; Dump sample data
 
+(defn dump-data [fp val]
+  (with-open [f (writer fp)]
+    (.write f (pr-str val))))
 
-
+(defn load-data [fp]
+  (read-string (slurp fp)))
 
 

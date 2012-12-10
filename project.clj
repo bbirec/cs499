@@ -11,4 +11,5 @@
                  [factql "1.0.3"]
                  [com.novemberain/monger "1.1.2"]
                  [org.clojure/math.combinatorics "0.0.3"]]
+  :jvm-opts ["-Xmx1500M"]
   :main cs499.server)

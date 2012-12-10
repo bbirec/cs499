@@ -98,31 +98,32 @@
 
 (defn ggnnq
   "GGNNQ"
-  [k points & query-sets]
-  (let [nearest-pairs (map #(nearest-pair-sort points %) query-sets)
-        threshold (atom 0)
-        result-set (atom (sorted-set-by result-<))
-        idx (atom 0)]
+  ([k nearest-pairs]
+     (let [threshold (atom 0)
+           result-set (atom (sorted-set-by result-<))
+           idx (atom 0)]
     
-    (while (and (or (empty? @result-set)
-                    (< (count @result-set) k)
-                    (and
-                     (= (count @result-set) k)
-                     (< @threshold (apply max (map :dist @result-set)))))
-                (< @idx (count (first nearest-pairs))))
+       (while (and (or (empty? @result-set)
+                       (< (count @result-set) k)
+                       (and
+                        (= (count @result-set) k)
+                        (< @threshold (apply max (map :dist @result-set)))))
+                   (< @idx (count (first nearest-pairs))))
       
-      ;; Find results from each query sets
-      (let [result (mapcat #(find-results nearest-pairs @idx % k)
-                           (range (count query-sets)))]
-        ;; Adding to the result set
-        (add-to-result result-set k result))
+         ;; Find results from each query sets
+         (let [result (mapcat #(find-results nearest-pairs @idx % k)
+                              (range (count nearest-pairs)))]
+           ;; Adding to the result set
+           (add-to-result result-set k result))
       
-      ;; Set threshold
-      (reset! threshold (find-threshold nearest-pairs @idx))
+         ;; Set threshold
+         (reset! threshold (find-threshold nearest-pairs @idx))
 
-      ;; Increment idx
-      (swap! idx inc))
-    @result-set))
+         ;; Increment idx
+         (swap! idx inc))
+       @result-set))
+  ([k points & query-sets]
+     (ggnnq k (map #(nearest-pair-sort points %) query-sets))))
 
 
 ;; Brute force algorithm

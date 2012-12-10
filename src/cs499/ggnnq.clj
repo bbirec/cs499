@@ -71,12 +71,12 @@
       found)))
 
 (defn find-results
-  [nearest-pairs row col k]
+  [nearest-pairs row col k k-comb]
   (let [pair (rac nearest-pairs col row)
         remains (keep-except col nearest-pairs)
         founds (map #(find-same-origin-pairs % row pair) remains)
         possibles
-        (apply k-combination greedy k founds)]
+        (apply k-combination k-comb k founds)]
     (map #(apply gen-result (insert-item % col pair))
          possibles)))
 
@@ -96,10 +96,15 @@
                  (range (count nearest-pairs)))]
     (apply min ths)))
 
+
 (defn ggnnq
   "GGNNQ"
-  ([k nearest-pairs]
-     (let [threshold (atom 0)
+  ([k k-comb nearest-pairs]
+     (let [k-comb (cond (= k-comb :greedy) greedy
+                        (= k-comb :round-robin) round-robin
+                        (= k-comb :brute-force) brute-force
+                        :default (assert nil "Unsupported k-comb"))
+           threshold (atom 0)
            result-set (atom (sorted-set-by result-<))
            idx (atom 0)]
     
@@ -111,7 +116,7 @@
                    (< @idx (count (first nearest-pairs))))
       
          ;; Find results from each query sets
-         (let [result (mapcat #(find-results nearest-pairs @idx % k)
+         (let [result (mapcat #(find-results nearest-pairs @idx % k k-comb)
                               (range (count nearest-pairs)))]
            ;; Adding to the result set
            (add-to-result result-set k result))
@@ -122,8 +127,8 @@
          ;; Increment idx
          (swap! idx inc))
        @result-set))
-  ([k points & query-sets]
-     (ggnnq k (map #(nearest-pair-sort points %) query-sets))))
+  ([k k-comb points & query-sets]
+     (ggnnq k k-comb (map #(nearest-pair-sort points %) query-sets))))
 
 
 ;; Brute force algorithm
@@ -148,72 +153,11 @@
 
 ;; Test
 
-(defonce fr1 (atom nil))
-(defonce fr2 (atom nil))
-
-(defn check-result [r1 r2]
-  #_(prn (pr-str r1))
-  #_(prn (pr-str r2))
-  (if (equal-result? r1 r2)
-    true
-    (do
-      (reset! fr1 r1)
-      (reset! fr2 r2)
-      (prn (pr-str (clojure.set/difference r1 r2)))
-      (prn (pr-str (clojure.set/difference r2 r1)))
-      false)))
 
 
-(defonce lp
-  (atom
-   #{[33 1] [31 0] [52 54] [20 57] [23 68] [25 15] [35 91] [71 64] [23 51] [2 64]}))
-(defonce lq1
-  (atom
-   #{[31 66] [30 4] [41 50] [79 27] [63 11] [6 83] [31 16] [34 85] [17 36] [57 20]}))
-(defonce lq2
-  (atom
-   #{[41 13] [7 75] [93 1] [95 3] [66 38] [59 6] [69 19] [91 83] [56 18] [90 88]}))
-(defonce lq3
-  (atom
-   #{[77 45] [81 50] [76 46] [13 84] [55 32] [36 49] [36 19] [12 27] [70 22] [58 77]}))
-
-(defn check-ggnnq [k np cq nq]
-  (let [p (gen-random-points np 10000)
-        qs (map (fn [_] (gen-random-points nq 10000))
-                (range cq))]
-    (time (apply ggnnq k p qs))
+(defn check-ggnnq [k ds cq]
+  (let [nps (gen-random-pair-sort ds ds cq)]
+    (prn (str "Generated " (count nps) " pairs"))
+    (time (ggnnq k :greedy nps))
+    (time (ggnnq k :round-robin nps))
     nil))
-
-(defn do-test
-  ([k p-size q-count q-size]
-     (let [p (gen-random-points p-size 100)
-           q1 (gen-random-points q-size 100)
-           q2 (gen-random-points q-size 100)
-           q3 (gen-random-points q-size 100)
-           r1 (brute-force-ggnnq k p q1 q2 q3)
-           r2 (ggnnq k p q1 q2 q3)]
-       (reset! lp p)
-       (reset! lq1 q1)
-       (reset! lq2 q2)
-       (reset! lq3 q3)
-       (check-result r1 r2))))
-
-
-(defn do-test2
-  ([k P & Q]
-     (let [r1 (apply brute-force-ggnnq k P Q)
-           r2 (apply ggnnq k P Q)]
-       (check-result r1 r2))))
-
-(defn do-test3
-  [imp k p-size q-size]
-  (let [p (gen-random-points p-size 100)
-        q1 (gen-random-points q-size 100)
-        q2 (gen-random-points q-size 100)
-        q3 (gen-random-points q-size 100)
-        r (time (imp k p q1 q2 q3))]
-    (reset! lp p)
-    (reset! lq1 q1)
-    (reset! lq2 q2)
-    (reset! lq3 q3)
-    r))

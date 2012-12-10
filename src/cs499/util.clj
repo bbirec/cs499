@@ -81,6 +81,12 @@
    (for [p P q Q]
      (gen-pair p q))))
 
+(defn gen-random-pair-sort [pds qds cq]
+  (let [ps (gen-random-points pds 1000)
+        qs (map (fn [_] (gen-random-points qds 10000))
+                (range cq))]
+    (map #(nearest-pair-sort ps %) qs)))
+
 ;; Dump sample data
 
 (defn dump-data [fp val]

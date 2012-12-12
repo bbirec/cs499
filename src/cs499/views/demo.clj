@@ -1,8 +1,8 @@
 (ns cs499.views.demo
   (:use [noir.core :only [defpage]]
         [hiccup.core :only [html]])
-  (:use [cs499.ggnnq :only [gen-random-set
-                            ggnnq]]))
+  (:use [cs499.ggnnq :only [ggnnq]])
+  (:use [cs499.util :only [gen-random-points]]))
 
 
 
@@ -30,11 +30,12 @@
 
 
 (defpage [:post "/demo/ta"] {:keys [p-count q-count q-size k]}
-  (let [p (gen-random-set (Integer/parseInt p-count) 100)
-        qs (map (fn [_] (gen-random-set (Integer/parseInt q-count) 100))
+  (let [p (gen-random-points (Integer/parseInt p-count))
+        qs (map (fn [_] (gen-random-points (Integer/parseInt q-count)))
                 (range (Integer/parseInt q-size)))
         results (apply ggnnq
                        (Integer/parseInt k)
+                       :greedy
                        p
                        qs)]
     (html

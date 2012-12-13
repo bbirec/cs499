@@ -41,6 +41,11 @@
 (defonce qs (atom nil))
 (defonce nps (atom nil))
 
+(defn has-data? []
+  (and (not (empty? @p))
+       (not (empty? @qs))
+       (not (empty? @nps))))
+
 
 (defpage "/demo/data" {}
   (html-
@@ -152,14 +157,17 @@
 
     [:div
      [:h2 "Sample Data"]
-     (data-status)
+     (if (has-data?)
+       (data-status))
      [:a {:href "/demo/data"} "New random data set"]]
 
     ;; Nearest pair sort table
-    (nearest-pair-table)
+    (if (has-data?)
+     (nearest-pair-table))
 
     ;; Search form
-    (search-form)
+    (if (has-data?)
+     (search-form))
 
     ;; Result table
     (if-not (empty? results)

@@ -1,50 +1,167 @@
 (ns cs499.views.demo
-  (:use [noir.core :only [defpage]]
+  (:use [noir.core :only [defpage defpartial render]]
+        [noir.response :only [redirect]]
         [hiccup.core :only [html]])
-  (:use [cs499.ggnnq :only [ggnnq]])
-  (:use [cs499.util :only [gen-random-points]]))
+  (:use [cs499.ggnnq :only [ggnnq]]
+        [cs499.util :only [with-time]])
+  (:use [clojure.math.numeric-tower :only [expt]])
+  (:import [cs499.util Point Pair])
+  (:use [cs499.util :only [gen-random-points gen-nearest-pair-sort]]))
 
 
-
-
-(defpage "/demo/ta" {}
+(defn html- [head body]
   (html
    [:html
+    [:head
+     [:link {:rel "stylesheet" :href "/css/bootstrap.min.css"}]
+     [:link {:rel "stylesheet" :href "http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css"}]
+     [:script {:src "http://code.jquery.com/jquery-1.8.3.js"}]
+     [:script {:src "http://code.jquery.com/ui/1.9.2/jquery-ui.js"}]
+     head]
+    [:body
+     body]]))
+
+(defn form-input [title name value]
+  [:div {:class "control-group"}
+   [:label {:class "control-label"} title]
+   [:div {:class "controls"}
+    [:input {:type "text" :name name :value value}]]])
+
+(defn form-submit [title]
+  [:div {:class "form-actions"}
+   [:button {:type "submit" :class "btn btn-primary"} title]])
+
+(defn form [title opt & body]
+  [:form opt
+   [:legend title]
+   body])
+
+
+(defonce p (atom nil))
+(defonce qs (atom nil))
+(defonce nps (atom nil))
+
+
+(defpage "/demo/data" {}
+  (html-
+   (list)
+   [:div {:class "container"}
+    [:div {:class "well"}
+     (form
+      "랜덤 POI 데이터 생성" {:method "POST"}
+      (form-input "Data size(m)" :m "100")
+      (form-input "# of Query types(n)" :n "3")
+      (form-submit "생성"))]]))
+
+
+(defpage [:post "/demo/data"] {:keys [m n]}
+  (let [m (Integer/parseInt m)
+        n (Integer/parseInt n)]
+    (reset! p (gen-random-points m))
+    (reset! qs (map (fn [_] (gen-random-points m))
+                    (range n)))
+    (reset! nps (gen-nearest-pair-sort @p @qs))
+    (redirect "/demo/ta")))
+
+
+(defpartial data-status []
+  [:div
+   [:h4 "Data Status"]
+   [:ul
+    [:li (str "# of points in P : " (count @p))]
+    [:li (str "# of points in Q : " (reduce str
+                                            (interpose ", "(map #(str (count %)) @qs))))]]])
+
+(defn nps-count
+  ([]
+     (apply min (map count @nps)))
+  ([max-count]
+     (min max-count (nps-count))))
+
+
+(defn str-p [p]
+  (str "(" (:x p) ", " (:y p) ")"))
+
+(defn str-pair [pair]
+  (str "[" (str-p (:p pair)) " " (str-p (:q pair))))
+
+(defpartial nearest-pair-table []
+  [:h2 "Closest Pairs"]
+  [:p (str "Total # of rows : " (nps-count))]
+  [:table {:class "table table-bordered table-striped table-hover"}
+   
+   [:thead
+    [:th "Idx"]
+    (for [title (map #(str "P-Q" %)
+                     (range (count @nps)))]
+      (list [:th title]
+            [:th "Distance"]))]
+   
+   [:tbody
+    (for [i (range (nps-count 5))]
+      [:tr
+       [:td (str i)]
+       (for [j (range (count @nps))]
+         (let [pair (nth (nth @nps j) i)]
+          (list
+           [:td (str-pair pair)]
+           [:td (str (:dist pair))])))])]])
+
+
+(defpartial result-table [{result :result time :time}]
+  [:h2 "Result"]
+  [:p (str "Elapsed Time : " time " ms")]
+  [:table {:class "table table-bordered table-striped table-hover"}
+   [:thead
+    [:th "Idx"]
+    [:th "Distance"]
+    [:th "P"]
+    (for [title (map #(str "Q" %)
+                     (range (count @qs)))]
+      [:th title])]
+   
+   [:tbody
+    (for [[i r] (map #(vector %1 %2) (range) result)]
+      [:tr
+       [:td (str i)]
+       [:td (str (:dist r))]
+       [:td (str-p (:p r))]
+       (for [q (:qs r)]
+         [:td (str-p q)])])]])
+
+(defpartial search-form []
+  [:h2"Search"]
+  [:p (str "Total # of candidates : " (expt (nps-count) (count @qs)))]
+  [:form {:method "POST"}
+      [:div
+       [:input {:type "text" :class "input-medium search-query" :placeholder "Top-k" :name :k}]
+       [:button {:type "submit" :class "btn"} "검색"]]])
+
+(defpage "/demo/ta" {:keys [results] :as param}
+  (html-
+   (list)
+   [:div {:class "container"}
+    [:h1 "과제연구 MGNNQ Demo"]
+    [:blockquote
+     [:p "주어진 point set P와 n개의 point set Q 중에서 각각의 와의 거리의 합이 가장 작은 k개의 p를 효율적으로 찾는 방법"]]
+
     [:div
-     [:h1 "Demo - Using Threshold Algorithm"]
-     [:form {:method "POST"}
-      "# of points in P"
-      [:input {:type "text" :value "10" :name "p-count"}] [:br]
-      
-      "# of points for each Q"
-      [:input {:type "text" :value "10" :name "q-count"}] [:br]
-      
-      "# of Q"
-      [:input {:type "text" :value "3" :name "q-size"}] [:br]
+     [:h2 "Sample Data"]
+     (data-status)
+     [:a {:href "/demo/data"} "New random data set"]]
 
-      "Top k"
-      [:input {:type "text" :value "10" :name "k"}] [:br]
-      
-      [:input {:type "submit"}]
-      ]]]))
+    ;; Nearest pair sort table
+    (nearest-pair-table)
+
+    ;; Search form
+    (search-form)
+
+    ;; Result table
+    (if-not (empty? results)
+     (result-table results))]))
 
 
-(defpage [:post "/demo/ta"] {:keys [p-count q-count q-size k]}
-  (let [p (gen-random-points (Integer/parseInt p-count))
-        qs (map (fn [_] (gen-random-points (Integer/parseInt q-count)))
-                (range (Integer/parseInt q-size)))
-        results (apply ggnnq
-                       (Integer/parseInt k)
-                       :greedy
-                       p
-                       qs)]
-    (html
-     [:html
-      [:h1 "Random P"]
-      [:div (pr-str p)]
-      [:h1 "Random Qs"]
-      (for [q qs]
-        [:div (pr-str q)])
-      [:h1 "Results: Set of [distance p [q1 q2...]"]
-      [:div (pr-str results)]
-      ])))
+(defpage [:post "/demo/ta"] {:keys [k]}
+  (let [k (Integer/parseInt k)
+        results (with-time (ggnnq k :greedy @nps))]
+    (render "/demo/ta" {:results results})))

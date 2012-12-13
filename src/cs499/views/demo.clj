@@ -55,13 +55,15 @@
 
 
 (defpage [:post "/demo/data"] {:keys [m n]}
-  (let [m (Integer/parseInt m)
-        n (Integer/parseInt n)]
-    (reset! p (gen-random-points m))
-    (reset! qs (map (fn [_] (gen-random-points m))
-                    (range n)))
-    (reset! nps (gen-nearest-pair-sort @p @qs))
-    (redirect "/demo/ta")))
+  (try
+    (let [m (Integer/parseInt m)
+          n (Integer/parseInt n)]
+      (reset! p (gen-random-points m))
+      (reset! qs (map (fn [_] (gen-random-points m))
+                      (range n)))
+      (reset! nps (gen-nearest-pair-sort @p @qs))
+      (redirect "/demo/ta"))
+    (catch Exception e (redirect "/demo/data"))))
 
 
 (defpartial data-status []
@@ -87,7 +89,7 @@
 
 (defpartial nearest-pair-table []
   [:h2 "Closest Pairs"]
-  [:p (str "Total # of rows : " (nps-count))]
+  [:ul [:li (str "Total # of rows : " (nps-count))]]
   [:table {:class "table table-bordered table-striped table-hover"}
    
    [:thead
@@ -110,7 +112,10 @@
 
 (defpartial result-table [{result :result time :time}]
   [:h2 "Result"]
-  [:p (str "Elapsed Time : " time " ms")]
+  [:ul
+   [:li (str "k = " (count result))]
+   [:li (str "Elapsed Time : " time " ms")]]
+
   [:table {:class "table table-bordered table-striped table-hover"}
    [:thead
     [:th "Idx"]
@@ -131,7 +136,7 @@
 
 (defpartial search-form []
   [:h2"Search"]
-  [:p (str "Total # of candidates : " (expt (nps-count) (count @qs)))]
+  [:ul [:li (str "Total # of candidates : " (expt (nps-count) (count @qs)))]]
   [:form {:method "POST"}
       [:div
        [:input {:type "text" :class "input-medium search-query" :placeholder "Top-k" :name :k}]
@@ -162,6 +167,7 @@
 
 
 (defpage [:post "/demo/ta"] {:keys [k]}
-  (let [k (Integer/parseInt k)
-        results (with-time (ggnnq k :greedy @nps))]
-    (render "/demo/ta" {:results results})))
+  (let [k (try (Integer/parseInt k) (catch Exception e 0))]
+    (if (> k 0)
+      (render "/demo/ta" {:results (with-time (ggnnq k :greedy @nps))})
+      (render "/demo/ta"))))
